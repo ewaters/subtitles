@@ -63,7 +63,7 @@ func TestNewFromSRTWithMacLinebreaks(t *testing.T) {
 		[]string{"No ninja!"},
 	}}}
 
-	utf8 := ConvertToUTF8([]byte(in))
+	utf8 := MustConvertToUTF8([]byte(in))
 
 	res, err := NewFromSRT(utf8)
 	assert.Equal(t, nil, err)
@@ -189,7 +189,7 @@ func TestParseLatin1Srt(t *testing.T) {
 		[]string{"Hallå ninja!"},
 	}}}
 
-	utf8 := ConvertToUTF8([]byte(in))
+	utf8 := MustConvertToUTF8([]byte(in))
 
 	res, err := NewFromSRT(utf8)
 	assert.Equal(t, nil, err)
@@ -218,7 +218,7 @@ func TestParseUTF16BESrt(t *testing.T) {
 		[]string{"Test"},
 	}}}
 
-	utf8 := ConvertToUTF8(in)
+	utf8 := MustConvertToUTF8(in)
 
 	res, err := NewFromSRT(utf8)
 	assert.Equal(t, nil, err)
@@ -247,7 +247,7 @@ func TestParseUTF16LESrt(t *testing.T) {
 		[]string{"Test"},
 	}}}
 
-	utf8 := ConvertToUTF8(in)
+	utf8 := MustConvertToUTF8(in)
 
 	res, err := NewFromSRT(utf8)
 	assert.Equal(t, nil, err)
@@ -277,7 +277,7 @@ func TestParseUTF8BomSrt(t *testing.T) {
 		[]string{"Test"},
 	}}}
 
-	utf8 := ConvertToUTF8(in)
+	utf8 := MustConvertToUTF8(in)
 
 	res, err := NewFromSRT(utf8)
 	assert.Equal(t, nil, err)

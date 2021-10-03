@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"strings"
 	"unicode/utf16"
 	"unicode/utf8"
+
+	"github.com/saintfish/chardet"
 )
 
 // readAsUTF8 tries to convert io.Reader to UTF8
@@ -18,30 +21,63 @@ func readAsUTF8(r io.Reader) (string, error) {
 		return "", nil
 	}
 
-	utf8 := ConvertToUTF8(buf.Bytes())
-	return utf8, nil
+	return ConvertToUTF8(buf.Bytes())
+}
+
+func MustConvertToUTF8(b []byte) string {
+	s, err := ConvertToUTF8(b)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return s
 }
 
 // ConvertToUTF8 returns a utf8 string
-func ConvertToUTF8(b []byte) string {
-
-	s := ""
-
-	if hasUTF16BeMarker(b) {
-		s, _ = utf16ToUTF8(b[2:], true)
-	} else if hasUTF16LeMarker(b) {
-		s, _ = utf16ToUTF8(b[2:], false)
-	} else if hasUTF8Marker(b) {
-		s = string(b[3:])
-	} else if utf8.ValidString(string(b)) {
-		s = string(b)
-	} else if looksLikeLatin1(b) {
-		s = latin1toUTF8(b)
-	} else {
-		s = string(b)
+func ConvertToUTF8(b []byte) (string, error) {
+	result, err := chardet.NewTextDetector().DetectBest(b)
+	if err != nil {
+		return "", fmt.Errorf("failed to detect character type: %v", err)
 	}
 
-	return normalizeLineFeeds(s)
+	s := ""
+	if result.Confidence > 50 {
+		switch result.Charset {
+		case "ISO-8859-1", "windows-1252":
+			s = latin1toUTF8(b)
+		case "UTF-16BE":
+			s, _ = utf16ToUTF8(b[2:], true)
+		case "UTF-16LE":
+			s, _ = utf16ToUTF8(b[2:], false)
+		case "UTF-8":
+			if hasUTF8Marker(b) {
+				s = string(b[3:])
+			} else if utf8.ValidString(string(b)) {
+				s = string(b)
+			}
+		default:
+			return "", fmt.Errorf("unhandled chardet charset %q", result.Charset)
+		}
+	}
+
+	// If we have little confidence in the result from chardet, we resort to our own checking.
+	if s == "" {
+		if hasUTF16BeMarker(b) {
+			s, _ = utf16ToUTF8(b[2:], true)
+		} else if hasUTF16LeMarker(b) {
+			s, _ = utf16ToUTF8(b[2:], false)
+		} else if hasUTF8Marker(b) {
+			s = string(b[3:])
+		} else if utf8.ValidString(string(b)) {
+			s = string(b)
+		} else if looksLikeLatin1(b) {
+			s = latin1toUTF8(b)
+		} else {
+			s = string(b)
+		}
+	}
+
+	str := normalizeLineFeeds(s)
+	return str, nil
 }
 
 // NormalizeLineFeeds will return a string with \n as linefeeds
@@ -70,22 +106,16 @@ func normalizeLineFeeds(s string) string {
 }
 
 func looksLikeLatin1(b []byte) bool {
-
 	swe := float64(0)
 
 	for i := 0; i < len(b); i++ {
-		switch {
-		case b[i] == 0xe5: // å
-			swe++
-		case b[i] == 0xe4: // ä
-			swe++
-		case b[i] == 0xf6: // ö
-			swe++
-		case b[i] == 0xc4: // Ä
-			swe++
-		case b[i] == 0xc5: // Å
-			swe++
-		case b[i] == 0xd6: // Ö
+		switch b[i] {
+		case 0xe5, // å
+			0xe4, // ä
+			0xf6, // ö
+			0xc4, // Ä
+			0xc5, // Å
+			0xd6: // Ö
 			swe++
 		}
 	}

@@ -13,9 +13,9 @@ func TestLooksLikeLatin1(t *testing.T) {
 }
 
 func TestTranscodeToUTF8(t *testing.T) {
-	assert.Equal(t, "hallå", ConvertToUTF8([]byte("hall\xe5"))) // from: latin1
-	assert.Equal(t, "hallå", ConvertToUTF8([]byte("hallå")))    // from: utf8 (Swedish)
-	assert.Equal(t, "烟火里的尘埃", ConvertToUTF8([]byte("烟火里的尘埃")))  // from: utf8 (Chinese)
+	assert.Equal(t, "hallå", MustConvertToUTF8([]byte("hall\xe5"))) // from: latin1
+	assert.Equal(t, "hallå", MustConvertToUTF8([]byte("hallå")))    // from: utf8 (Swedish)
+	assert.Equal(t, "烟火里的尘埃", MustConvertToUTF8([]byte("烟火里的尘埃")))  // from: utf8 (Chinese)
 }
 
 func TestReadFileAsUTF8(t *testing.T) {

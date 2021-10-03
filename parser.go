@@ -8,7 +8,10 @@ import (
 
 // Parse tries to parse a subtitle
 func Parse(b []byte) (Subtitle, error) {
-	s := ConvertToUTF8(b)
+	s, err := ConvertToUTF8(b)
+	if err != nil {
+		return Subtitle{}, fmt.Errorf("parse: failed to convert to utf8: %w", err)
+	}
 	if looksLikeCCDBCapture(s) {
 		return NewFromCCDBCapture(s)
 	} else if looksLikeSSA(s) {
@@ -29,6 +32,6 @@ func LooksLikeTextSubtitle(filename string) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
-	s := ConvertToUTF8(data)
+	s := MustConvertToUTF8(data)
 	return looksLikeCCDBCapture(s) || looksLikeSSA(s) || looksLikeDCSub(s) || looksLikeSRT(s) || looksLikeVTT(s)
 }
